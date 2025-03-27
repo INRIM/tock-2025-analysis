@@ -1833,24 +1833,22 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "tintervals"
-version = "0.1.7"
+version = "0.2.0"
 description = "A collection of tools to work with time intervals and to convert time data"
 optional = false
-python-versions = ">=3.6"
+python-versions = "<4.0,>=3.10"
 files = [
-    {file = "tintervals-0.1.7-py3-none-any.whl", hash = "sha256:7e50aa8cdc4b7bc24dae2cfd8c0591b6e5dc12fa2060c7c2e469c0533ecc5442"},
-    {file = "tintervals-0.1.7.tar.gz", hash = "sha256:eee68402750e9c5ce0d97a2406a48406e75938ccd84e32655ee9efad5e12dd95"},
+    {file = "tintervals-0.2.0-py3-none-any.whl", hash = "sha256:f90cd268d8037cc7b0f9e058d0131da3674fabd82c825d96292fc09472384801"},
+    {file = "tintervals-0.2.0.tar.gz", hash = "sha256:ea50dd4b55e2ad0566c46bbb96644a57cbd1cb8d72f6199f80ea3b6baf36e17c"},
 ]
 
 [package.dependencies]
-ciso8601 = "*"
-numpy = "*"
-pandas = "*"
-pyyaml = "*"
-scipy = "*"
-
-[package.extras]
-docs = ["autodocsumm", "myst-parser", "sphinx (==4.4.0)", "sphinx-rtd-theme"]
+ciso8601 = ">=2.3.2,<3.0.0"
+matplotlib = ">=3.9.2,<4.0.0"
+numpy = ">=2.0.1,<3.0.0"
+pandas = ">=2.2.2,<3.0.0"
+pyyaml = ">=6.0.2,<7.0.0"
+scipy = ">=1.14.1,<2.0.0"
 
 [[package]]
 name = "tomli"
@@ -1978,4 +1976,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "a12245e9eb0a93c08af0921ef473879674163cedff63897dc9c3013553a0116b"
+content-hash = "887be3373479cc8e36261e4f0b65e3a296c5a9bff2735078058f9081711a7a84"

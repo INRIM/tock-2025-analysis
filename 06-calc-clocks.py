@@ -1,25 +1,10 @@
-
 import decimal
 import os
-
-import allantools as at
-import matplotlib.pyplot as plt
-import numpy as np
-import scipy
-import tintervals as ti
-
-import tintervals.rocitlinks as rl
-from matplotlib.backends.backend_pdf import PdfPages
-from scipy.ndimage import minimum_filter1d
-
-plt.close("all")
-plt.ioff()
-
 import time
-from datetime import datetime
 
-from scipy.ndimage import uniform_filter1d
-from uncertainties import *
+import numpy as np
+import tintervals as ti
+import tintervals.rocitlinks as rl
 
 t0 = time.time()
 
@@ -69,7 +54,6 @@ start = 60750
 stop = 60780
 
 
-
 links = {}
 for name in link_names:
     links[name] = rl.load_link_from_dir(
@@ -78,7 +62,7 @@ for name in link_names:
 
 
 for name in clock_names:
-    #tstart, tstop = startstop[name]
+    # tstart, tstop = startstop[name]
     tstart, tstop = start, stop
     links[name] = rl.load_link_from_dir(
         os.path.join(dir, name), start=ti.epoch_from_mjd(tstart), stop=ti.epoch_from_mjd(tstop)
@@ -130,24 +114,23 @@ for shortname, llinks in list(ratios.items()):
 
     reslinks[shortname] = reslink
 
-
     # time varying uB
     if llinks[0].data.shape[1] == 4:
         uuB1 = llinks[0].data[masks[0], 3]
         reslink.oscA.systematic_uncertainty = np.mean(uuB1)
     else:
-        uuB1 = reslink.oscA.systematic_uncertainty*np.ones_like(reslink.t)
+        uuB1 = reslink.oscA.systematic_uncertainty * np.ones_like(reslink.t)
 
     # time varying uB
     if llinks[-1].data.shape[1] == 4:
         uuB2 = llinks[-1].data[masks[-1], 3]
         reslink.oscB.systematic_uncertainty = np.mean(uuB2)
     else:
-        uuB2 = reslink.oscB.systematic_uncertainty*np.ones_like(reslink.t)
+        uuB2 = reslink.oscB.systematic_uncertainty * np.ones_like(reslink.t)
 
-    reslink.data = np.column_stack((reslink.data,uuB1,uuB2))
+    reslink.data = np.column_stack((reslink.data, uuB1, uuB2))
 
     rl.save_link_to_dir(outdir, reslink, extra_names=["usys_A", "usys_B"])
-    
 
-    
+
+print(f"Saving clock data time = {time.time() - t0} s")
