@@ -72,9 +72,16 @@ ratios = {}
 # npl_local = "NPL_YbE3-NPL_Sr1"
 # links[npl_local] = rl.load_link_from_dir(os.path.join(dir, npl_local), start=ti.epoch_from_mjd(tstart), stop=ti.epoch_from_mjd(tstop))
 
+start = 60740
+stop = 60780
 
 for shortname, longname in ratio_names.items():
-    res = rl.load_link_from_dir(os.path.join(outdir, longname), discard_invalid=True)
+    res = rl.load_link_from_dir(
+        os.path.join(outdir, longname),
+        discard_invalid=True,
+        start=ti.epoch_from_mjd(start),
+        stop=ti.epoch_from_mjd(stop),
+    )
     ratios[shortname] = res
 
 extremes = np.array([[np.amin(x.t), np.amax(x.t)] for x in ratios.values()])
@@ -140,8 +147,8 @@ for shortname, reslink in list(ratios.items()):
     ug1, ug2 = dict_uGRS[shortname]
     uGRS = (ug1**2 + ug2**2) ** 0.5 * 1e-18
 
-    daily_vals = ti.array2intervals(reslink.t, tgap=3600)
-    daily_vals = ti.semi_split(daily_vals, base=6 * 3600, offset=6 * 3600)
+    daily_vals = ti.array2intervals(reslink.t, tgap=6 * 3600)
+    daily_vals = ti.semi_split(daily_vals, base=24 * 3600, offset=0 * 3600, mino=0.3)
     # dayly_vals = ti.array2intervals(reslink.t, tgap=3600)
     days, ddata, dcount = rl.average(reslink, daily_vals)
     mask = dcount > 864

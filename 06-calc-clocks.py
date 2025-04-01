@@ -44,13 +44,12 @@ link_names = [
 # other comparators to load
 clock_names = [
     "INRIM_DoPTBSr4-INRIM_PTBSr4",
-    "INRIM_HM-INRIM_DoPTBSr4",
-    "INRIM_HM-INRIM_LoYb",
+    "INRIM_DoPTBSr4-INRIM_LoYb",
     "INRIM_LoYb-INRIM_ITYb1",
 ]
 
 
-start = 60750
+start = 60740
 stop = 60780
 
 
@@ -72,7 +71,7 @@ for name in clock_names:
 # I should make a list of the keys to fix the order!
 
 chains = {
-    "IT-Yb1/PTB-Sr4": ["INRIM_ITYb1", "INRIM_LoYb", "INRIM_HM", "INRIM_DoPTBSr4", "INRIM_PTBSr4"],
+    "IT-Yb1/PTB-Sr4": ["INRIM_ITYb1", "INRIM_LoYb", "INRIM_DoPTBSr4", "INRIM_PTBSr4"],
 }
 
 
@@ -117,14 +116,14 @@ for shortname, llinks in list(ratios.items()):
     # time varying uB
     if llinks[0].data.shape[1] == 4:
         uuB1 = llinks[0].data[masks[0], 3]
-        reslink.oscA.systematic_uncertainty = np.mean(uuB1)
+        # reslink.oscA.systematic_uncertainty = np.mean(uuB1)
     else:
         uuB1 = reslink.oscA.systematic_uncertainty * np.ones_like(reslink.t)
 
     # time varying uB
     if llinks[-1].data.shape[1] == 4:
         uuB2 = llinks[-1].data[masks[-1], 3]
-        reslink.oscB.systematic_uncertainty = np.mean(uuB2)
+        # reslink.oscB.systematic_uncertainty = np.mean(uuB2)
     else:
         uuB2 = reslink.oscB.systematic_uncertainty * np.ones_like(reslink.t)
 
