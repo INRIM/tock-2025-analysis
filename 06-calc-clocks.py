@@ -19,6 +19,7 @@ os.makedirs(outdir, exist_ok=True)
 v0_fp = {
     "IT-Yb1": decimal.Decimal("518295836590863.630494915"),
     # "PTB-In+": decimal.Decimal("1267402452901041.28250601"),
+    "PTB-In1": decimal.Decimal("1267402452901041.3"),
     "PTB-Sr3": decimal.Decimal("429228004229872.992467107"),
     "PTB-Sr4": decimal.Decimal("429228004229872.992467107"),
     "PTB-Yb1E3": decimal.Decimal("642121496772645.118522185"),
@@ -46,6 +47,10 @@ clock_names = [
     "INRIM_DoPTBSr4-INRIM_PTBSr4",
     "INRIM_DoPTBSr4-INRIM_LoYb",
     "INRIM_LoYb-INRIM_ITYb1",
+    "PTB_Si-PTB_NIRP",
+    'PTB_Si-PTB_In_CombKnoten',
+    "PTB_Si-PTB_Sr3_CombKnoten",
+    "PTB_Si-PTB_Yb_CombKnoten",
 ]
 
 
@@ -71,7 +76,11 @@ for name in clock_names:
 # I should make a list of the keys to fix the order!
 
 chains = {
+    "PTB-In1/PTB-Yb1E3": ["PTB_In_CombKnoten", "PTB_Si", "PTB_Yb_CombKnoten"],
+    "PTB-In1/PTB-Sr3": ["PTB_In_CombKnoten", "PTB_Si", "PTB_Sr3_CombKnoten"],
+    "PTB-Yb1E3/PTB-Sr3": ["PTB_Yb_CombKnoten", "PTB_Si", "PTB_Sr3_CombKnoten"],
     "IT-Yb1/PTB-Sr4": ["INRIM_ITYb1", "INRIM_LoYb", "INRIM_DoPTBSr4", "INRIM_PTBSr4"],
+    
 }
 
 

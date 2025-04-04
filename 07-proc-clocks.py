@@ -57,11 +57,19 @@ pdf = PdfPages(pdfname)
 print("TOCK March 2025")
 
 
-ratio_names = {"IT-Yb1/PTB-Sr4": "INRIM_ITYb1-INRIM_PTBSr4"}
+ratio_names = {
+    "PTB-In1/PTB-Yb1E3": "PTB_In_CombKnoten-PTB_Yb_CombKnoten",
+    "PTB-In1/PTB-Sr3": "PTB_In_CombKnoten-PTB_Sr3_CombKnoten",
+    "PTB-Yb1E3/PTB-Sr3": "PTB_Yb_CombKnoten-PTB_Sr3_CombKnoten",
+    "IT-Yb1/PTB-Sr4": "INRIM_ITYb1-INRIM_PTBSr4"
+    }
 
 
 # GRS from ROCIT spreadsheet in 1e-18
 dict_uGRS = {
+    "PTB-In1/PTB-Yb1E3": (3.3e-1,3.1e-1),
+    "PTB-In1/PTB-Sr3": (3.3e-1,3.9e-1),
+    "PTB-Yb1E3/PTB-Sr3": (3.1e-1,3.9e-1),
     "IT-Yb1/PTB-Sr4": (2.7, 0),
 }
 
