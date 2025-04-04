@@ -23,8 +23,8 @@ v0_fp = {
     "PTB-Sr3": decimal.Decimal("429228004229872.992467107"),
     "PTB-Sr4": decimal.Decimal("429228004229872.992467107"),
     "PTB-Yb1E3": decimal.Decimal("642121496772645.118522185"),
-    "SYRTE-Hg": decimal.Decimal("1128575290808154.31910196"),
-    # "SYRTE-Sr2": decimal.Decimal("429228004229872.992467107"),
+    # "SYRTE-Hg": decimal.Decimal("1128575290808154.31910196"),
+    "OBSPARIS-SrB": decimal.Decimal("429228004229872.992467107"),
     # "PTB-Yb1E3E2": decimal.Decimal("688358979309308.239120953"),
     "NPL-E3Yb+3": decimal.Decimal("642121496772645.118522185"),
     "NPL-Sr1": decimal.Decimal("429228004229872.992467107"),
@@ -34,12 +34,12 @@ print("TOCK March 2025")
 
 # preprocessed link data to load
 link_names = [
-    # "INRIM_RioMod-SYRTE_CUS",
+    "INRIM_RioMod-OBSPARIS_CUS_2",
     # "NPL_T1-INRIM_RioMod",
-    # "NPL_T1-SYRTE_CUS",
-    # "PTB_NIRP-INRIM_RioMod",
+    # "NPL_T1-OBSPARIS_CUS_2",
+    "PTB_NIRP-INRIM_RioMod",
     # "PTB_NIRP-NPL_T1",
-    # "PTB_NIRP-SYRTE_CUS",
+    "PTB_NIRP-OBSPARIS_CUS_2",
 ]
 
 # other comparators to load
@@ -47,8 +47,14 @@ clock_names = [
     "INRIM_DoPTBSr4-INRIM_PTBSr4",
     "INRIM_DoPTBSr4-INRIM_LoYb",
     "INRIM_LoYb-INRIM_ITYb1",
+    "INRIM_RioMod-INRIM_DoPTBSr4",
+    "INRIM_RioMod-INRIM_LoYb",
+    "NPL_T1-NPL_Sr1",
+    "NPL_T1-NPL_YbE3",
+    "OBSPARIS_CUS_2-OBSPARIS_SrL",
+    "OBSPARIS_SrL-OBSPARIS_SrB",
     "PTB_Si-PTB_NIRP",
-    'PTB_Si-PTB_In_CombKnoten',
+    "PTB_Si-PTB_In_CombKnoten",
     "PTB_Si-PTB_Sr3_CombKnoten",
     "PTB_Si-PTB_Yb_CombKnoten",
 ]
@@ -72,15 +78,67 @@ for name in clock_names:
         os.path.join(dir, name), start=ti.epoch_from_mjd(tstart), stop=ti.epoch_from_mjd(tstop)
     )
 
+# NPL uncertainty is given in Hz, not in relative
+# TODO: make code smarter
+links["NPL_T1-NPL_Sr1"].data[:, 3] /= float(links["NPL_T1-NPL_Sr1"].oscA.v0)
+links["NPL_T1-NPL_YbE3"].data[:, 3] /= float(links["NPL_T1-NPL_YbE3"].oscA.v0)
+
+
 # TODO
 # I should make a list of the keys to fix the order!
 
 chains = {
     "PTB-In1/PTB-Yb1E3": ["PTB_In_CombKnoten", "PTB_Si", "PTB_Yb_CombKnoten"],
+    "PTB-In1/IT-Yb1": ["PTB_In_CombKnoten", "PTB_Si", "PTB_NIRP", "INRIM_RioMod", "INRIM_LoYb", "INRIM_ITYb1"],
+    "PTB-In1/OBSPARIS-SrB": [
+        "PTB_In_CombKnoten",
+        "PTB_Si",
+        "PTB_NIRP",
+        "OBSPARIS_CUS_2",
+        "OBSPARIS_SrL",
+        "OBSPARIS_SrB",
+    ],
     "PTB-In1/PTB-Sr3": ["PTB_In_CombKnoten", "PTB_Si", "PTB_Sr3_CombKnoten"],
+    "PTB-In1/PTB-Sr4": ["PTB_In_CombKnoten", "PTB_Si", "PTB_NIRP", "INRIM_RioMod", "INRIM_DoPTBSr4", "INRIM_PTBSr4"],
+    "PTB-Yb1E3/IT-Yb1": ["PTB_Yb_CombKnoten", "PTB_Si", "PTB_NIRP", "INRIM_RioMod", "INRIM_LoYb", "INRIM_ITYb1"],
+    "NPL-E3Yb+3/NPL-Sr1": ["NPL_YbE3", "NPL_T1", "NPL_Sr1"],
+    "PTB-Yb1E3/OBSPARIS-SrB": [
+        "PTB_Yb_CombKnoten",
+        "PTB_Si",
+        "PTB_NIRP",
+        "OBSPARIS_CUS_2",
+        "OBSPARIS_SrL",
+        "OBSPARIS_SrB",
+    ],
     "PTB-Yb1E3/PTB-Sr3": ["PTB_Yb_CombKnoten", "PTB_Si", "PTB_Sr3_CombKnoten"],
+    "PTB-Yb1E3/PTB-Sr4": ["PTB_Yb_CombKnoten", "PTB_Si", "PTB_NIRP", "INRIM_RioMod", "INRIM_DoPTBSr4", "INRIM_PTBSr4"],
+    "IT-Yb1/OBSPARIS-SrB": [
+        "INRIM_ITYb1",
+        "INRIM_LoYb",
+        "INRIM_RioMod",
+        "OBSPARIS_CUS_2",
+        "OBSPARIS_SrL",
+        "OBSPARIS_SrB",
+    ],
+    "IT-Yb1/PTB-Sr3": ["INRIM_ITYb1", "INRIM_LoYb", "INRIM_RioMod", "PTB_NIRP", "PTB_Si", "PTB_Sr3_CombKnoten"],
     "IT-Yb1/PTB-Sr4": ["INRIM_ITYb1", "INRIM_LoYb", "INRIM_DoPTBSr4", "INRIM_PTBSr4"],
-    
+    "OBSPARIS-SrB/PTB-Sr3": [
+        "OBSPARIS_SrB",
+        "OBSPARIS_SrL",
+        "OBSPARIS_CUS_2",
+        "PTB_NIRP",
+        "PTB_Si",
+        "PTB_Sr3_CombKnoten",
+    ],
+    "OBSPARIS-SrB/PTB-Sr4": [
+        "OBSPARIS_SrB",
+        "OBSPARIS_SrL",
+        "OBSPARIS_CUS_2",
+        "INRIM_RioMod",
+        "INRIM_DoPTBSr4",
+        "INRIM_PTBSr4",
+    ],
+    "PTB-Sr3/PTB-Sr4": ["PTB_Sr3_CombKnoten", "PTB_Si", "PTB_NIRP", "INRIM_RioMod", "INRIM_DoPTBSr4", "INRIM_PTBSr4"],
 }
 
 
@@ -94,7 +152,7 @@ for name, dos in chains.items():
         elif b + "-" + a in (link_names + clock_names):
             res += [links[b + "-" + a]]
         else:
-            print(a + "-" + b)
+            print("MISSING!:", a + "-" + b)
 
     ratios[name] = res
 
@@ -139,6 +197,13 @@ for shortname, llinks in list(ratios.items()):
     reslink.data = np.column_stack((reslink.data, uuB1, uuB2))
 
     rl.save_link_to_dir(outdir, reslink, extra_names=["usys_A", "usys_B"])
+
+
+# save link name/shortname
+shortnames = list(reslinks.keys())
+longnames = [reslinks[x].name for x in shortnames]
+names = np.column_stack((shortnames, longnames))
+np.savetxt(os.path.join(outdir, "ratios.txt"), names, fmt="%s\t%s")
 
 
 print(f"Saving clock data time = {time.time() - t0} s")

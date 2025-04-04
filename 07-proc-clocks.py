@@ -57,20 +57,41 @@ pdf = PdfPages(pdfname)
 print("TOCK March 2025")
 
 
-ratio_names = {
-    "PTB-In1/PTB-Yb1E3": "PTB_In_CombKnoten-PTB_Yb_CombKnoten",
-    "PTB-In1/PTB-Sr3": "PTB_In_CombKnoten-PTB_Sr3_CombKnoten",
-    "PTB-Yb1E3/PTB-Sr3": "PTB_Yb_CombKnoten-PTB_Sr3_CombKnoten",
-    "IT-Yb1/PTB-Sr4": "INRIM_ITYb1-INRIM_PTBSr4"
-    }
+# ratio_names = {
+#     "PTB-In1/PTB-Yb1E3": "PTB_In_CombKnoten-PTB_Yb_CombKnoten",
+#     "PTB-In1/IT-Yb1": "PTB_In_CombKnoten-INRIM_ITYb1",
+#     "PTB-In1/PTB-Sr3": "PTB_In_CombKnoten-PTB_Sr3_CombKnoten",
+#     "PTB-In1/PTB-Sr4": "PTB_In_CombKnoten-INRIM_PTBSr4",
+#     "PTB-Yb1E3/IT-Yb1": "PTB_Yb_CombKnoten-INRIM_ITYb1",
+#     "PTB-Yb1E3/PTB-Sr3": "PTB_Yb_CombKnoten-PTB_Sr3_CombKnoten",
+#     "PTB-Yb1E3/PTB-Sr4": "PTB_Yb_CombKnoten-INRIM_PTBSr4",
+#     "IT-Yb1/PTB-Sr3": "INRIM_ITYb1-PTB_Sr3_CombKnoten",
+#     "IT-Yb1/PTB-Sr4": "INRIM_ITYb1-INRIM_PTBSr4",
+#     "PTB-Sr3/PTB-Sr4": "PTB_Sr3_CombKnoten-INRIM_PTBSr4",
+# }
+
+names = np.loadtxt(os.path.join(outdir, "ratios.txt"), dtype=str)
+ratio_names = {x[0]: x[1] for x in names}
 
 
 # GRS from ROCIT spreadsheet in 1e-18
 dict_uGRS = {
-    "PTB-In1/PTB-Yb1E3": (3.3e-1,3.1e-1),
-    "PTB-In1/PTB-Sr3": (3.3e-1,3.9e-1),
-    "PTB-Yb1E3/PTB-Sr3": (3.1e-1,3.9e-1),
+    "PTB-In1/PTB-Yb1E3": (3.3e-1, 3.1e-1),
+    "PTB-In1/IT-Yb1": (2.4, 2.7),
+    "PTB-In1/OBSPARIS-SrB": (2.4, 3.0),
+    "PTB-In1/PTB-Sr3": (3.3e-1, 3.9e-1),
+    "PTB-In1/PTB-Sr4": (2.4, 2.7),
+    "PTB-Yb1E3/IT-Yb1": (2.4, 2.7),
+    "NPL-E3Yb+3/NPL-Sr1": (0.38, 1.14),
+    "PTB-Yb1E3/OBSPARIS-SrB": (2.4, 3.0),
+    "PTB-Yb1E3/PTB-Sr3": (3.1e-1, 3.9e-1),
+    "PTB-Yb1E3/PTB-Sr4": (2.4, 2.7),
+    "IT-Yb1/OBSPARIS-SrB": (2.7, 3.0),
+    "IT-Yb1/PTB-Sr3": (2.7, 2.4),
     "IT-Yb1/PTB-Sr4": (2.7, 0),
+    "OBSPARIS-SrB/PTB-Sr3": (3, 2.4),
+    "OBSPARIS-SrB/PTB-Sr4": (3, 2.7),
+    "PTB-Sr3/PTB-Sr4": (2.7, 2.4),
 }
 
 
@@ -84,12 +105,17 @@ start = 60740
 stop = 60780
 
 for shortname, longname in ratio_names.items():
-    res = rl.load_link_from_dir(
-        os.path.join(outdir, longname),
-        discard_invalid=True,
-        start=ti.epoch_from_mjd(start),
-        stop=ti.epoch_from_mjd(stop),
-    )
+    try:
+        res = rl.load_link_from_dir(
+            os.path.join(outdir, longname),
+            discard_invalid=True,
+            start=ti.epoch_from_mjd(start),
+            stop=ti.epoch_from_mjd(stop),
+        )
+    except IOError:
+        print(f"No data found for {shortname}")
+        continue
+
     ratios[shortname] = res
 
 extremes = np.array([[np.amin(x.t), np.amax(x.t)] for x in ratios.values()])
@@ -155,8 +181,8 @@ for shortname, reslink in list(ratios.items()):
     ug1, ug2 = dict_uGRS[shortname]
     uGRS = (ug1**2 + ug2**2) ** 0.5 * 1e-18
 
-    daily_vals = ti.array2intervals(reslink.t, tgap=6 * 3600)
-    daily_vals = ti.semi_split(daily_vals, base=24 * 3600, offset=0 * 3600, mino=0.3)
+    daily_vals = ti.array2intervals(reslink.t, tgap=3 * 3600)
+    daily_vals = ti.semi_split(daily_vals, base=3 * 3600, offset=0 * 3600, mino=0.3)
     # dayly_vals = ti.array2intervals(reslink.t, tgap=3600)
     days, ddata, dcount = rl.average(reslink, daily_vals)
     mask = dcount > 864
@@ -203,9 +229,9 @@ for shortname, reslink in list(ratios.items()):
         + rout
     )
 
-    ax0.plot(ti.mjd_from_epoch(reslink.t), reslink.delta + grsc, ".", label=reslink.name, rasterized=True)
+    ax0.plot(ti.mjd_from_epoch(reslink.t) - 60000, reslink.delta + grsc, ".", label=reslink.name, rasterized=True)
     ax0.plot(
-        ti.mjd_from_epoch(reslink.t),
+        ti.mjd_from_epoch(reslink.t) - 60000,
         uniform_filter1d(reslink.delta + grsc, 10000),
         ".",
         label="Rolling mean",
@@ -213,8 +239,8 @@ for shortname, reslink in list(ratios.items()):
     )
     ax0.legend(loc=0)
     ax0.set_ylabel("y")
-    ax0.set_xlabel("MJD")
-    ax0.set_xlim(np.amin(extremes), np.amax(extremes))
+    ax0.set_xlabel("MJD-60000")
+    ax0.set_xlim(np.amin(extremes) - 60000, np.amax(extremes) - 60000)
     ax0.grid(True)
 
     # hours, hlink, hcount = rl.link_average(reslink, 360, timetags_as_start=False)
@@ -244,14 +270,18 @@ for shortname, reslink in list(ratios.items()):
     ax1.axhspan(y - (uA**2 + uB**2) ** 0.5, y + (uA**2 + uB**2) ** 0.5, color="C0", alpha=0.5)
 
     ax1.errorbar(
-        timetags, ddata[:, 1] + grsc, yerr=(daily_ustat**2 + daily_usys**2) ** 0.5, fmt="o", label="Stat + Sys unc."
+        timetags - 60000,
+        ddata[:, 1] + grsc,
+        yerr=(daily_ustat**2 + daily_usys**2) ** 0.5,
+        fmt="o",
+        label="Stat + Sys unc.",
     )
-    ax1.errorbar(timetags, ddata[:, 1] + grsc, yerr=daily_ustat, fmt="o", label="Stat. unc.")
+    ax1.errorbar(timetags - 60000, ddata[:, 1] + grsc, yerr=daily_ustat, fmt="o", label="Stat. unc.")
     # ax1.errorbar(timetags[outlier_mask], ddata[outlier_mask, 1] + grsc, fmt="o", label="Out")
     # ax1.plot(ti.mjd_from_epoch(dlink.t), dlink.delta  + grsc,  '.')
     ax1.set_ylabel("y (averaged)")
-    ax1.set_xlabel("MJD")
-    ax1.set_xlim(np.amin(extremes), np.amax(extremes))
+    ax1.set_xlabel("MJD-60000")
+    ax1.set_xlim(np.amin(extremes) - 60000, np.amax(extremes) - 60000)
     ax1.legend(loc=0)
     ax1.grid(True)
 
