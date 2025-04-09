@@ -118,6 +118,7 @@ clocks = [
     "PTB-Yb1E3",
     "IT-Yb1",
     "NPL-Sr1",
+    "OBSPARIS-Sr2",
     "OBSPARIS-SrB",
     "PTB-Sr3",
     "PTB-Sr4",

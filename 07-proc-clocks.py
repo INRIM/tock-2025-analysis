@@ -5,6 +5,8 @@ import allantools as at
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
+import scipy.interpolate
+import scipy.optimize
 import tintervals as ti
 
 # sys.path.append("..")
@@ -73,26 +75,45 @@ print("TOCK March 2025")
 names = np.loadtxt(os.path.join(outdir, "ratios.txt"), dtype=str)
 ratio_names = {x[0]: x[1] for x in names}
 
-
-# GRS from ROCIT spreadsheet in 1e-18
-dict_uGRS = {
-    "PTB-In1/PTB-Yb1E3": (3.3e-1, 3.1e-1),
-    "PTB-In1/IT-Yb1": (2.4, 2.7),
-    "PTB-In1/OBSPARIS-SrB": (2.4, 3.0),
-    "PTB-In1/PTB-Sr3": (3.3e-1, 3.9e-1),
-    "PTB-In1/PTB-Sr4": (2.4, 2.7),
-    "PTB-Yb1E3/IT-Yb1": (2.4, 2.7),
-    "NPL-E3Yb+3/NPL-Sr1": (0.38, 1.14),
-    "PTB-Yb1E3/OBSPARIS-SrB": (2.4, 3.0),
-    "PTB-Yb1E3/PTB-Sr3": (3.1e-1, 3.9e-1),
-    "PTB-Yb1E3/PTB-Sr4": (2.4, 2.7),
-    "IT-Yb1/OBSPARIS-SrB": (2.7, 3.0),
-    "IT-Yb1/PTB-Sr3": (2.7, 2.4),
-    "IT-Yb1/PTB-Sr4": (2.7, 0),
-    "OBSPARIS-SrB/PTB-Sr3": (3, 2.4),
-    "OBSPARIS-SrB/PTB-Sr4": (3, 2.7),
-    "PTB-Sr3/PTB-Sr4": (2.7, 2.4),
+# remote/local GRS uncertainty
+clock_uGRS = {
+    "IT-Yb1": (2.7, 1),
+    "PTB-In1": (2.4, 0.33),
+    "PTB-Sr3": (2.4, 0.39),
+    "PTB-Sr4": (2.7, 1),
+    "PTB-Yb1E3": (2.4, 0.31),
+    "OBSPARIS-Sr2": (3, 1),
+    "OBSPARIS-SrB": (3, 1),
+    "PTB-Yb1E3E2": (2.4, 0.31),
+    "NPL-E3Yb+3": (2.5, 0.38),
+    "NPL-Sr1": (2.7, 1.14),
 }
+
+
+# # GRS from ROCIT spreadsheet in 1e-18
+# dict_uGRS = {
+#     "PTB-In1/PTB-Yb1E3": (3.3e-1, 3.1e-1),
+#     "PTB-In1/IT-Yb1": (2.4, 2.7),
+#     "PTB-In1/OBSPARIS-Sr2": (2.4, 3.0),
+#     "PTB-In1/OBSPARIS-SrB": (2.4, 3.0),
+#     "PTB-In1/PTB-Sr3": (3.3e-1, 3.9e-1),
+#     "PTB-In1/PTB-Sr4": (2.4, 2.7),
+#     "PTB-Yb1E3/IT-Yb1": (2.4, 2.7),
+#     "NPL-E3Yb+3/NPL-Sr1": (0.38, 1.14),
+#     "PTB-Yb1E3/OBSPARIS-Sr2": (2.4, 3.0),
+#     "PTB-Yb1E3/OBSPARIS-SrB": (2.4, 3.0),
+#     "PTB-Yb1E3/PTB-Sr3": (3.1e-1, 3.9e-1),
+#     "PTB-Yb1E3/PTB-Sr4": (2.4, 2.7),
+#     "IT-Yb1/OBSPARIS-Sr2": (2.7, 3.0),
+#     "IT-Yb1/OBSPARIS-SrB": (2.7, 3.0),
+#     "IT-Yb1/PTB-Sr3": (2.7, 2.4),
+#     "IT-Yb1/PTB-Sr4": (2.7, 0),
+#     "OBSPARIS-Sr2/PTB-Sr3": (3, 2.4),
+#     "OBSPARIS-Sr2/PTB-Sr4": (3, 2.7),
+#     "OBSPARIS-SrB/PTB-Sr3": (3, 2.4),
+#     "OBSPARIS-SrB/PTB-Sr4": (3, 2.7),
+#     "PTB-Sr3/PTB-Sr4": (2.7, 2.4),
+# }
 
 
 ratios = {}
@@ -131,7 +152,8 @@ for shortname, reslink in list(ratios.items()):
     print(reslink.name)
     print(reslink.r0)
 
-    limit = 5e-15
+    limit = (np.percentile(reslink.delta, 95) - np.percentile(reslink.delta, 5))*2
+    print(f'{limit=:.2}')
 
     mask = np.abs(reslink.delta - np.mean(reslink.delta)) > limit
     reslink.flag[mask] = 0
@@ -178,7 +200,19 @@ for shortname, reslink in list(ratios.items()):
     uB1 = np.mean(uuB1)
     uB2 = np.mean(uuB2)
     uB = (uB1**2 + uB2**2) ** 0.5
-    ug1, ug2 = dict_uGRS[shortname]
+
+
+    fclock2, fclock1 = reslink.name.split("-")
+    ist1 = fclock1.split('-')[0]
+    ist2 = fclock2.split('-')[0]
+    
+    
+    if ist1 == ist2:
+        # Local GRS
+        ug1, ug2 = clock_uGRS[clock1][1], clock_uGRS[clock1][1]
+    else:
+        ug1, ug2 = clock_uGRS[clock1][0], clock_uGRS[clock1][0]
+    #ug1, ug2 = dict_uGRS[shortname]
     uGRS = (ug1**2 + ug2**2) ** 0.5 * 1e-18
 
     daily_vals = ti.array2intervals(reslink.t, tgap=3 * 3600)
@@ -197,10 +231,13 @@ for shortname, reslink in list(ratios.items()):
     daily_usys = (usys**2 + uGRS**2) ** 0.5
 
     ndof = len(daily_ustat) - 1
-    chi2red = np.sum((ddata[:, 1] + grsc - y) ** 2 / daily_ustat**2) / ndof
-    birge = np.sqrt(chi2red)
-
-    uAstar = uA * max(birge, 1)
+    if ndof > 0:
+        chi2red = np.sum((ddata[:, 1] + grsc - y) ** 2 / daily_ustat**2) / ndof
+        birge = np.sqrt(chi2red)
+        uAstar = uA * max(birge, 1)
+    else:
+        birge = np.nan
+        uAstar = uA
 
     final_u = np.sqrt(uAstar**2 + uB**2 + uGRS**2)
     final = ufloat(y, final_u)
@@ -313,6 +350,27 @@ for shortname, reslink in list(ratios.items()):
     print("uGRS= {:.2}".format(uGRS))
     print("\n")
 
+    # if shortname in ["IT-Yb1/PTB-Sr3", "IT-Yb1/PTB-Sr4", "PTB-Sr3/PTB-Sr4"]:
+
+    #     t_tide, tide = np.genfromtxt("./Tides/INRIM-PTB.dat", unpack=True)
+    #     t_tide = ti.epoch_from_mjd(t_tide)
+    #     tide_fun = scipy.interpolate.interp1d(t_tide, tide, bounds_error=False, fill_value=0)
+
+    #     def fit_fun(x,a,b):
+    #         return a + b*tide_fun(x)
+        
+    #     popt, pcov = scipy.optimize.curve_fit(fit_fun, reslink.t, reslink.delta + grsc)
+
+    #     a,b = correlated_values(popt, pcov)
+    #     print(f'a = {a:.2uS}\tb = {b:.2uS}')
+
+    #     #tau3, ad3, ade3, adn3 = at.oadev(reslink.delta-fit_fun(reslink.t, *popt), rate=1, data_type="freq", taus="octave")
+    #     tau4, ad4, ade4, adn4 = at.oadev(fit_fun(reslink.t, 0, 1.), rate=1, data_type="freq", taus=np.logspace(3,5,100))
+    #     #ax2.loglog(tau3, ad3, "-", label="Tide corr.")
+    #     ax2.loglog(tau4, ad4, "-", label="Tides contrib.")
+
+
+
     def round_sig(x, sig=2):
         if x != 0:
             return round(x, sig - int(np.floor(np.log10(abs(x)))) - 1)
@@ -357,6 +415,7 @@ for shortname, reslink in list(ratios.items()):
         fmt=["%.1f", "%.3e", "%.3e", "%.3e"],
         delimiter="\t",
     )
+
 
 
 # # calculate and save overlaps
