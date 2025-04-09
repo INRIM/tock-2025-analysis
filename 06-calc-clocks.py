@@ -24,40 +24,30 @@ v0_fp = {
     "PTB-Sr4": decimal.Decimal("429228004229872.992467107"),
     "PTB-Yb1E3": decimal.Decimal("642121496772645.118522185"),
     # "SYRTE-Hg": decimal.Decimal("1128575290808154.31910196"),
+    "OBSPARIS-Sr2": decimal.Decimal("429228004229872.992467107"),
     "OBSPARIS-SrB": decimal.Decimal("429228004229872.992467107"),
     # "PTB-Yb1E3E2": decimal.Decimal("688358979309308.239120953"),
     "NPL-E3Yb+3": decimal.Decimal("642121496772645.118522185"),
     "NPL-Sr1": decimal.Decimal("429228004229872.992467107"),
 }
 
+long_names = {
+    "IT-Yb1": "INRIM_ITYb1",
+    "PTB-In1": "PTB_In_CombKnoten",
+    "PTB-Sr3": "PTB_Sr3_CombKnoten",
+    "PTB-Sr4": "INRIM_PTBSr4",
+    "PTB-Yb1E3": "PTB_Yb_CombKnoten",
+    "OBSPARIS-Sr2": "OBSPARIS_Sr2",
+    "OBSPARIS-SrB": "OBSPARIS_SrB",
+    "PTB-Yb1E3E2": "PTB_Yb1E2_CombYb",
+    "NPL-E3Yb+3": "NPL_YbE3",
+    "NPL-Sr1": "NPL_Sr1",
+}
+
+
 print("TOCK March 2025")
 
-# preprocessed link data to load
-link_names = [
-    "INRIM_RioMod-OBSPARIS_CUS_2",
-    # "NPL_T1-INRIM_RioMod",
-    # "NPL_T1-OBSPARIS_CUS_2",
-    "PTB_NIRP-INRIM_RioMod",
-    # "PTB_NIRP-NPL_T1",
-    "PTB_NIRP-OBSPARIS_CUS_2",
-]
-
-# other comparators to load
-clock_names = [
-    "INRIM_DoPTBSr4-INRIM_PTBSr4",
-    "INRIM_DoPTBSr4-INRIM_LoYb",
-    "INRIM_LoYb-INRIM_ITYb1",
-    "INRIM_RioMod-INRIM_DoPTBSr4",
-    "INRIM_RioMod-INRIM_LoYb",
-    "NPL_T1-NPL_Sr1",
-    "NPL_T1-NPL_YbE3",
-    "OBSPARIS_CUS_2-OBSPARIS_SrL",
-    "OBSPARIS_SrL-OBSPARIS_SrB",
-    "PTB_Si-PTB_NIRP",
-    "PTB_Si-PTB_In_CombKnoten",
-    "PTB_Si-PTB_Sr3_CombKnoten",
-    "PTB_Si-PTB_Yb_CombKnoten",
-]
+comparator_names = [f.name for f in os.scandir(dir) if f.is_dir()]
 
 
 start = 60740
@@ -65,18 +55,19 @@ stop = 60780
 
 
 links = {}
-for name in link_names:
-    links[name] = rl.load_link_from_dir(
-        os.path.join(outdir, name), start=ti.epoch_from_mjd(start), stop=ti.epoch_from_mjd(stop)
-    )
+connections = []
 
-
-for name in clock_names:
+for name in comparator_names:
     # tstart, tstop = startstop[name]
     tstart, tstop = start, stop
-    links[name] = rl.load_link_from_dir(
-        os.path.join(dir, name), start=ti.epoch_from_mjd(tstart), stop=ti.epoch_from_mjd(tstop)
-    )
+    try:
+        links[name] = rl.load_link_from_dir(
+            os.path.join(dir, name), start=ti.epoch_from_mjd(tstart), stop=ti.epoch_from_mjd(tstop)
+        )
+    except IOError:
+        print(f"cannot load {name}")
+        continue
+    connections += [name]
 
 # NPL uncertainty is given in Hz, not in relative
 # TODO: make code smarter
@@ -84,77 +75,78 @@ links["NPL_T1-NPL_Sr1"].data[:, 3] /= float(links["NPL_T1-NPL_Sr1"].oscA.v0)
 links["NPL_T1-NPL_YbE3"].data[:, 3] /= float(links["NPL_T1-NPL_YbE3"].oscA.v0)
 
 
-# TODO
-# I should make a list of the keys to fix the order!
+def build_graph(connections):
+    graph = {}
+    for conn in connections:
+        a, b = conn.split("-")
+        graph.setdefault(a, []).append(b)
+        graph.setdefault(b, []).append(a)
+    return graph
 
-chains = {
-    "PTB-In1/PTB-Yb1E3": ["PTB_In_CombKnoten", "PTB_Si", "PTB_Yb_CombKnoten"],
-    "PTB-In1/IT-Yb1": ["PTB_In_CombKnoten", "PTB_Si", "PTB_NIRP", "INRIM_RioMod", "INRIM_LoYb", "INRIM_ITYb1"],
-    "PTB-In1/OBSPARIS-SrB": [
-        "PTB_In_CombKnoten",
-        "PTB_Si",
-        "PTB_NIRP",
-        "OBSPARIS_CUS_2",
-        "OBSPARIS_SrL",
-        "OBSPARIS_SrB",
-    ],
-    "PTB-In1/PTB-Sr3": ["PTB_In_CombKnoten", "PTB_Si", "PTB_Sr3_CombKnoten"],
-    "PTB-In1/PTB-Sr4": ["PTB_In_CombKnoten", "PTB_Si", "PTB_NIRP", "INRIM_RioMod", "INRIM_DoPTBSr4", "INRIM_PTBSr4"],
-    "PTB-Yb1E3/IT-Yb1": ["PTB_Yb_CombKnoten", "PTB_Si", "PTB_NIRP", "INRIM_RioMod", "INRIM_LoYb", "INRIM_ITYb1"],
-    "NPL-E3Yb+3/NPL-Sr1": ["NPL_YbE3", "NPL_T1", "NPL_Sr1"],
-    "PTB-Yb1E3/OBSPARIS-SrB": [
-        "PTB_Yb_CombKnoten",
-        "PTB_Si",
-        "PTB_NIRP",
-        "OBSPARIS_CUS_2",
-        "OBSPARIS_SrL",
-        "OBSPARIS_SrB",
-    ],
-    "PTB-Yb1E3/PTB-Sr3": ["PTB_Yb_CombKnoten", "PTB_Si", "PTB_Sr3_CombKnoten"],
-    "PTB-Yb1E3/PTB-Sr4": ["PTB_Yb_CombKnoten", "PTB_Si", "PTB_NIRP", "INRIM_RioMod", "INRIM_DoPTBSr4", "INRIM_PTBSr4"],
-    "IT-Yb1/OBSPARIS-SrB": [
-        "INRIM_ITYb1",
-        "INRIM_LoYb",
-        "INRIM_RioMod",
-        "OBSPARIS_CUS_2",
-        "OBSPARIS_SrL",
-        "OBSPARIS_SrB",
-    ],
-    "IT-Yb1/PTB-Sr3": ["INRIM_ITYb1", "INRIM_LoYb", "INRIM_RioMod", "PTB_NIRP", "PTB_Si", "PTB_Sr3_CombKnoten"],
-    "IT-Yb1/PTB-Sr4": ["INRIM_ITYb1", "INRIM_LoYb", "INRIM_DoPTBSr4", "INRIM_PTBSr4"],
-    "OBSPARIS-SrB/PTB-Sr3": [
-        "OBSPARIS_SrB",
-        "OBSPARIS_SrL",
-        "OBSPARIS_CUS_2",
-        "PTB_NIRP",
-        "PTB_Si",
-        "PTB_Sr3_CombKnoten",
-    ],
-    "OBSPARIS-SrB/PTB-Sr4": [
-        "OBSPARIS_SrB",
-        "OBSPARIS_SrL",
-        "OBSPARIS_CUS_2",
-        "INRIM_RioMod",
-        "INRIM_DoPTBSr4",
-        "INRIM_PTBSr4",
-    ],
-    "PTB-Sr3/PTB-Sr4": ["PTB_Sr3_CombKnoten", "PTB_Si", "PTB_NIRP", "INRIM_RioMod", "INRIM_DoPTBSr4", "INRIM_PTBSr4"],
-}
+
+def shortest_path(graph, start, end):
+    from collections import deque
+
+    if start not in graph or end not in graph:
+        return None
+
+    queue = deque([(start, [start])])
+    visited = set()
+
+    while queue:
+        current, path = queue.popleft()
+        if current == end:
+            return [f"{path[i]}-{path[i+1]}" for i in range(len(path) - 1)]
+        visited.add(current)
+        for neighbor in graph.get(current, []):
+            if neighbor not in visited and neighbor not in path:
+                queue.append((neighbor, path + [neighbor]))
+    return None
+
+
+def invert_connection(conn):
+    a, b = conn.split("-")
+    return f"{b}-{a}"
+
+
+graph = build_graph(connections)
+
+
+clocks = [
+    "PTB-In1",
+    "NPL-E3Yb+3",
+    "PTB-Yb1E3",
+    "IT-Yb1",
+    "NPL-Sr1",
+    "OBSPARIS-SrB",
+    "PTB-Sr3",
+    "PTB-Sr4",
+]
+
+chains = {}
+
+for i, A in enumerate(clocks):
+    for j, B in enumerate(clocks[i + 1 :]):
+        chains[A + "/" + B] = shortest_path(graph, long_names[A], long_names[B])
 
 
 # load all data
 ratios = {}
-for name, dos in chains.items():
-    res = []
-    for a, b in zip(dos[::-1][:-1], dos[::-1][1:]):
-        if a + "-" + b in (link_names + clock_names):
-            res += [-links[a + "-" + b]]
-        elif b + "-" + a in (link_names + clock_names):
-            res += [links[b + "-" + a]]
-        else:
-            print("MISSING!:", a + "-" + b)
+for name, comps in chains.items():
+    print("\n", name)
+    if comps:
+        res = []
+        for c in comps[::-1]:
+            if c in (connections):
+                print(c)
+                res += [links[c]]
+            elif invert_connection(c) in (connections):
+                print(invert_connection(c))
+                res += [-links[invert_connection(c)]]
+            else:
+                print("MISSING!:", c)
 
-    ratios[name] = res
+        ratios[name] = res
 
 
 reslinks = {}
