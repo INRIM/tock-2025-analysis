@@ -152,8 +152,8 @@ for shortname, reslink in list(ratios.items()):
     print(reslink.name)
     print(reslink.r0)
 
-    limit = (np.percentile(reslink.delta, 95) - np.percentile(reslink.delta, 5))*2
-    print(f'{limit=:.2}')
+    limit = (np.percentile(reslink.delta, 95) - np.percentile(reslink.delta, 5)) * 2
+    print(f"{limit=:.2}")
 
     mask = np.abs(reslink.delta - np.mean(reslink.delta)) > limit
     reslink.flag[mask] = 0
@@ -201,18 +201,16 @@ for shortname, reslink in list(ratios.items()):
     uB2 = np.mean(uuB2)
     uB = (uB1**2 + uB2**2) ** 0.5
 
-
     fclock2, fclock1 = reslink.name.split("-")
-    ist1 = fclock1.split('-')[0]
-    ist2 = fclock2.split('-')[0]
-    
-    
+    ist1 = fclock1.split("-")[0]
+    ist2 = fclock2.split("-")[0]
+
     if ist1 == ist2:
         # Local GRS
         ug1, ug2 = clock_uGRS[clock1][1], clock_uGRS[clock1][1]
     else:
         ug1, ug2 = clock_uGRS[clock1][0], clock_uGRS[clock1][0]
-    #ug1, ug2 = dict_uGRS[shortname]
+    # ug1, ug2 = dict_uGRS[shortname]
     uGRS = (ug1**2 + ug2**2) ** 0.5 * 1e-18
 
     daily_vals = ti.array2intervals(reslink.t, tgap=3 * 3600)
@@ -350,27 +348,6 @@ for shortname, reslink in list(ratios.items()):
     print("uGRS= {:.2}".format(uGRS))
     print("\n")
 
-    # if shortname in ["IT-Yb1/PTB-Sr3", "IT-Yb1/PTB-Sr4", "PTB-Sr3/PTB-Sr4"]:
-
-    #     t_tide, tide = np.genfromtxt("./Tides/INRIM-PTB.dat", unpack=True)
-    #     t_tide = ti.epoch_from_mjd(t_tide)
-    #     tide_fun = scipy.interpolate.interp1d(t_tide, tide, bounds_error=False, fill_value=0)
-
-    #     def fit_fun(x,a,b):
-    #         return a + b*tide_fun(x)
-        
-    #     popt, pcov = scipy.optimize.curve_fit(fit_fun, reslink.t, reslink.delta + grsc)
-
-    #     a,b = correlated_values(popt, pcov)
-    #     print(f'a = {a:.2uS}\tb = {b:.2uS}')
-
-    #     #tau3, ad3, ade3, adn3 = at.oadev(reslink.delta-fit_fun(reslink.t, *popt), rate=1, data_type="freq", taus="octave")
-    #     tau4, ad4, ade4, adn4 = at.oadev(fit_fun(reslink.t, 0, 1.), rate=1, data_type="freq", taus=np.logspace(3,5,100))
-    #     #ax2.loglog(tau3, ad3, "-", label="Tide corr.")
-    #     ax2.loglog(tau4, ad4, "-", label="Tides contrib.")
-
-
-
     def round_sig(x, sig=2):
         if x != 0:
             return round(x, sig - int(np.floor(np.log10(abs(x)))) - 1)
@@ -415,7 +392,6 @@ for shortname, reslink in list(ratios.items()):
         fmt=["%.1f", "%.3e", "%.3e", "%.3e"],
         delimiter="\t",
     )
-
 
 
 # # calculate and save overlaps
