@@ -59,19 +59,6 @@ pdf = PdfPages(pdfname)
 print("TOCK March 2025")
 
 
-# ratio_names = {
-#     "PTB-In1/PTB-Yb1E3": "PTB_In_CombKnoten-PTB_Yb_CombKnoten",
-#     "PTB-In1/IT-Yb1": "PTB_In_CombKnoten-INRIM_ITYb1",
-#     "PTB-In1/PTB-Sr3": "PTB_In_CombKnoten-PTB_Sr3_CombKnoten",
-#     "PTB-In1/PTB-Sr4": "PTB_In_CombKnoten-INRIM_PTBSr4",
-#     "PTB-Yb1E3/IT-Yb1": "PTB_Yb_CombKnoten-INRIM_ITYb1",
-#     "PTB-Yb1E3/PTB-Sr3": "PTB_Yb_CombKnoten-PTB_Sr3_CombKnoten",
-#     "PTB-Yb1E3/PTB-Sr4": "PTB_Yb_CombKnoten-INRIM_PTBSr4",
-#     "IT-Yb1/PTB-Sr3": "INRIM_ITYb1-PTB_Sr3_CombKnoten",
-#     "IT-Yb1/PTB-Sr4": "INRIM_ITYb1-INRIM_PTBSr4",
-#     "PTB-Sr3/PTB-Sr4": "PTB_Sr3_CombKnoten-INRIM_PTBSr4",
-# }
-
 names = np.loadtxt(os.path.join(outdir, "ratios.txt"), dtype=str)
 ratio_names = {x[0]: x[1] for x in names}
 
@@ -79,9 +66,10 @@ ratio_names = {x[0]: x[1] for x in names}
 clock_uGRS = {
     "IT-Yb1": (2.7, 1),
     "PTB-In1": (2.4, 0.33),
+    "PTB-Al+": (2.4, 0.33),  # TBC
+    "PTB-Yb1E3": (2.4, 0.31),
     "PTB-Sr3": (2.4, 0.39),
     "PTB-Sr4": (2.7, 1),
-    "PTB-Yb1E3": (2.4, 0.31),
     "OBSPARIS-Sr2": (3, 1),
     "OBSPARIS-SrB": (3, 1),
     "PTB-Yb1E3E2": (2.4, 0.31),
@@ -90,37 +78,8 @@ clock_uGRS = {
 }
 
 
-# # GRS from ROCIT spreadsheet in 1e-18
-# dict_uGRS = {
-#     "PTB-In1/PTB-Yb1E3": (3.3e-1, 3.1e-1),
-#     "PTB-In1/IT-Yb1": (2.4, 2.7),
-#     "PTB-In1/OBSPARIS-Sr2": (2.4, 3.0),
-#     "PTB-In1/OBSPARIS-SrB": (2.4, 3.0),
-#     "PTB-In1/PTB-Sr3": (3.3e-1, 3.9e-1),
-#     "PTB-In1/PTB-Sr4": (2.4, 2.7),
-#     "PTB-Yb1E3/IT-Yb1": (2.4, 2.7),
-#     "NPL-E3Yb+3/NPL-Sr1": (0.38, 1.14),
-#     "PTB-Yb1E3/OBSPARIS-Sr2": (2.4, 3.0),
-#     "PTB-Yb1E3/OBSPARIS-SrB": (2.4, 3.0),
-#     "PTB-Yb1E3/PTB-Sr3": (3.1e-1, 3.9e-1),
-#     "PTB-Yb1E3/PTB-Sr4": (2.4, 2.7),
-#     "IT-Yb1/OBSPARIS-Sr2": (2.7, 3.0),
-#     "IT-Yb1/OBSPARIS-SrB": (2.7, 3.0),
-#     "IT-Yb1/PTB-Sr3": (2.7, 2.4),
-#     "IT-Yb1/PTB-Sr4": (2.7, 0),
-#     "OBSPARIS-Sr2/PTB-Sr3": (3, 2.4),
-#     "OBSPARIS-Sr2/PTB-Sr4": (3, 2.7),
-#     "OBSPARIS-SrB/PTB-Sr3": (3, 2.4),
-#     "OBSPARIS-SrB/PTB-Sr4": (3, 2.7),
-#     "PTB-Sr3/PTB-Sr4": (2.7, 2.4),
-# }
-
-
 ratios = {}
 
-# load local NPL data
-# npl_local = "NPL_YbE3-NPL_Sr1"
-# links[npl_local] = rl.load_link_from_dir(os.path.join(dir, npl_local), start=ti.epoch_from_mjd(tstart), stop=ti.epoch_from_mjd(tstop))
 
 start = 60740
 stop = 60780
@@ -162,6 +121,10 @@ for shortname, reslink in list(ratios.items()):
 
     if len(reslink.t) == 0:
         print("No common data!\n")
+        continue
+
+    if len(reslink.t) < 864:
+        print("Less than 864 s of common data! Skipping!\n")
         continue
 
     print("Outliers = ", outliers)
@@ -219,7 +182,8 @@ for shortname, reslink in list(ratios.items()):
     days, ddata, dcount = rl.average(reslink, daily_vals)
     mask = dcount > 864
     # mask = dcount > 86
-    days, ddata, dcount = days[mask], ddata[mask], dcount[mask]
+    if sum(mask) > 0:
+        days, ddata, dcount = days[mask], ddata[mask], dcount[mask]
 
     daily_ustat = np.sqrt(white**2 / (dcount))
 

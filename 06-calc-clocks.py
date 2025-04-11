@@ -19,10 +19,11 @@ os.makedirs(outdir, exist_ok=True)
 v0_fp = {
     "IT-Yb1": decimal.Decimal("518295836590863.630494915"),
     # "PTB-In+": decimal.Decimal("1267402452901041.28250601"),
-    "PTB-In1": decimal.Decimal("1267402452901041.3"),
+    "PTB-In1": decimal.Decimal("1267402452901041.28250601"),
+    "PTB-Al+": decimal.Decimal("1121015393207859.15926219"),
+    "PTB-Yb1E3": decimal.Decimal("642121496772645.118522185"),
     "PTB-Sr3": decimal.Decimal("429228004229872.992467107"),
     "PTB-Sr4": decimal.Decimal("429228004229872.992467107"),
-    "PTB-Yb1E3": decimal.Decimal("642121496772645.118522185"),
     # "SYRTE-Hg": decimal.Decimal("1128575290808154.31910196"),
     "OBSPARIS-Sr2": decimal.Decimal("429228004229872.992467107"),
     "OBSPARIS-SrB": decimal.Decimal("429228004229872.992467107"),
@@ -34,15 +35,30 @@ v0_fp = {
 long_names = {
     "IT-Yb1": "INRIM_ITYb1",
     "PTB-In1": "PTB_In_CombKnoten",
+    "PTB-Al+": "PTB_Al_CombAl",
+    "PTB-Yb1E3": "PTB_Yb_CombKnoten",
     "PTB-Sr3": "PTB_Sr3_CombKnoten",
     "PTB-Sr4": "INRIM_PTBSr4",
-    "PTB-Yb1E3": "PTB_Yb_CombKnoten",
     "OBSPARIS-Sr2": "OBSPARIS_Sr2",
     "OBSPARIS-SrB": "OBSPARIS_SrB",
     "PTB-Yb1E3E2": "PTB_Yb1E2_CombYb",
     "NPL-E3Yb+3": "NPL_YbE3",
     "NPL-Sr1": "NPL_Sr1",
 }
+
+
+clocks = [
+    "PTB-In1",
+    "PTB-Al+",
+    "NPL-E3Yb+3",
+    "PTB-Yb1E3",
+    "IT-Yb1",
+    "NPL-Sr1",
+    "OBSPARIS-Sr2",
+    "OBSPARIS-SrB",
+    "PTB-Sr3",
+    "PTB-Sr4",
+]
 
 
 print("TOCK March 2025")
@@ -57,6 +73,7 @@ stop = 60780
 links = {}
 connections = []
 
+print("Loading files")
 for name in comparator_names:
     # tstart, tstop = startstop[name]
     tstart, tstop = start, stop
@@ -67,6 +84,7 @@ for name in comparator_names:
     except IOError:
         print(f"cannot load {name}")
         continue
+    print(f"loading {name}")
     connections += [name]
 
 # NPL uncertainty is given in Hz, not in relative
@@ -112,27 +130,18 @@ def invert_connection(conn):
 graph = build_graph(connections)
 
 
-clocks = [
-    "PTB-In1",
-    "NPL-E3Yb+3",
-    "PTB-Yb1E3",
-    "IT-Yb1",
-    "NPL-Sr1",
-    "OBSPARIS-Sr2",
-    "OBSPARIS-SrB",
-    "PTB-Sr3",
-    "PTB-Sr4",
-]
-
 chains = {}
-
+print("Calculating chains")
 for i, A in enumerate(clocks):
     for j, B in enumerate(clocks[i + 1 :]):
-        chains[A + "/" + B] = shortest_path(graph, long_names[A], long_names[B])
+        short = shortest_path(graph, long_names[A], long_names[B])
+        chains[A + "/" + B] = short
+        print(A + "/" + B, short)
 
 
-# load all data
+# prepare all chains
 ratios = {}
+print("Building chains")
 for name, comps in chains.items():
     print("\n", name)
     if comps:
@@ -153,9 +162,9 @@ for name, comps in chains.items():
 reslinks = {}
 
 i = 0
-
+print("Calculating clock ratios")
 for shortname, llinks in list(ratios.items()):
-    print(shortname)
+    print("\n" + shortname)
     clock2, clock1 = shortname.split("/")
 
     if len(llinks) == 1:
