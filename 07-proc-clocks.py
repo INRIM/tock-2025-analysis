@@ -266,7 +266,7 @@ for shortname, reslink in list(ratios.items()):
 
     ax1 = fig.add_subplot(gs[1, 0], sharex=ax0)
     ax1.axhspan(y - final_u, y + final_u, color="C2", alpha=0.5)
-    ax1.axhspan(y - (uA**2 + uB**2) ** 0.5, y + (uA**2 + uB**2) ** 0.5, color="C0", alpha=0.5)
+    #ax1.axhspan(y - (uA**2 + uB**2) ** 0.5, y + (uA**2 + uB**2) ** 0.5, color="C0", alpha=0.5)
 
     ax1.errorbar(
         timetags - 60000,

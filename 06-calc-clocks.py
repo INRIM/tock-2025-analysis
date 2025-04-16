@@ -92,6 +92,8 @@ for name in comparator_names:
 links["NPL_T1-NPL_Sr1"].data[:, 3] /= float(links["NPL_T1-NPL_Sr1"].oscA.v0)
 links["NPL_T1-NPL_YbE3"].data[:, 3] /= float(links["NPL_T1-NPL_YbE3"].oscA.v0)
 
+# # temporary fix for LPL_MLS-LPL_RLS timing offset
+# links["LPL_MLS-LPL_RLS"].t += 3600.
 
 def build_graph(connections):
     graph = {}
