@@ -81,8 +81,8 @@ clock_uGRS = {
 ratios = {}
 
 
-start = 60740
-stop = 60780
+start = 60842
+stop = 60846
 
 for shortname, longname in ratio_names.items():
     try:
@@ -94,13 +94,23 @@ for shortname, longname in ratio_names.items():
         )
     except IOError:
         print(f"No data found for {shortname}")
+        continue    
+
+    if len(res.t) == 0:
+        print(f"No data loaded for {shortname}")
         continue
+
 
     ratios[shortname] = res
 
 extremes = np.array([[np.amin(x.t), np.amax(x.t)] for x in ratios.values()])
 extremes = ti.mjd_from_epoch(extremes)
 
+# link = ratios['IT-Yb1/PTB-Sr3']
+# vals = [60768.567528, 60769.430905]
+# mask = (link.t > ti.epoch_from_mjd(vals[0])) & (link.t < ti.epoch_from_mjd(vals[1]))
+# link.flag[mask] = 0
+# link.drop_invalid()
 
 figs = []
 i = 0
@@ -266,7 +276,7 @@ for shortname, reslink in list(ratios.items()):
 
     ax1 = fig.add_subplot(gs[1, 0], sharex=ax0)
     ax1.axhspan(y - final_u, y + final_u, color="C2", alpha=0.5)
-    #ax1.axhspan(y - (uA**2 + uB**2) ** 0.5, y + (uA**2 + uB**2) ** 0.5, color="C0", alpha=0.5)
+    # ax1.axhspan(y - (uA**2 + uB**2) ** 0.5, y + (uA**2 + uB**2) ** 0.5, color="C0", alpha=0.5)
 
     ax1.errorbar(
         timetags - 60000,
@@ -330,7 +340,7 @@ for shortname, reslink in list(ratios.items()):
     # filoE.write(f'{uA:.2e}\t{dark_hi:.2e}\n')
     # filoE.write(f'{(uB1**2 + uB2**2)**0.5:.2e}\t{dark_lo:.2e}\n\n')
 
-    plt.savefig(os.path.join(figdir, f"{i} " + reslink.name + "all.png"))
+    plt.savefig(os.path.join(figdir, reslink.name + "all.png"))
     pdf.savefig()
     i += 1
 
